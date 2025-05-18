@@ -1,8 +1,9 @@
 import math
+from graphviz import Digraph
 class C45:
 
 	"""Creates a decision tree with C4.5 algorithm"""
-	def __init__(self, pathToData,pathToNames):
+	def __init__(self, pathToData,pathToNames, maxDepth=None):
 		self.filePathToData = pathToData
 		self.filePathToNames = pathToNames
 		self.data = []
@@ -11,6 +12,7 @@ class C45:
 		self.attrValues = {}
 		self.attributes = []
 		self.tree = None
+		self.maxDepth = maxDepth
 
 	def fetchData(self):
 		with open(self.filePathToNames, "r") as file:
@@ -37,6 +39,37 @@ class C45:
 
 	def printTree(self):
 		self.printNode(self.tree)
+	
+	def add_nodes(self, dot, node, parent_id=None, edge_label=None):
+		node_id = str(id(node))
+		
+		if node.isLeaf:
+			label = f"Class = {node.label}"
+		else:
+			if node.threshold is None:
+				label = f"{node.label} (discrete)"
+			else:
+				label = f"{node.label} (<= {node.threshold:.2f}?)"
+		dot.node(node_id, label)
+		if parent_id:
+			dot.edge(parent_id, node_id, label=edge_label or "")
+		# Recurse to children
+		if not node.isLeaf:
+			if node.threshold is not None:
+				# Numeric split: two children (<=, >)
+				self.add_nodes(dot, node.children[0], node_id, f"<= {node.threshold:.2f}")
+				self.add_nodes(dot, node.children[1], node_id, f"> {node.threshold:.2f}")
+			else:
+				# Discrete split: label edges with attribute values
+				for idx, child in enumerate(node.children):
+					# Get value label from attrValues stored in tree
+					val = self.attrValues[node.label][idx]
+					self.add_nodes(dot, child, node_id, str(val))
+     
+	def visualize(self, fileName, directory):
+		dot = Digraph()
+		self.add_nodes(dot, self.tree)
+		dot.render(fileName, directory, format="pdf", cleanup=True)
 
 	def printNode(self, node, indent=""):
 		if not node.isLeaf:
@@ -44,9 +77,9 @@ class C45:
 				#discrete
 				for index,child in enumerate(node.children):
 					if child.isLeaf:
-						print(indent + node.label + " = " + attributes[index] + " : " + child.label)
+						print(indent + node.label + " = " + self.attrValues[node.label][index] + " : " + child.label)
 					else:
-						print(indent + node.label + " = " + attributes[index] + " : ")
+						print(indent + node.label + " = " + self.attrValues[node.label][index] + " : ")
 						self.printNode(child, indent + "	")
 			else:
 				#numerical
@@ -64,13 +97,15 @@ class C45:
 					print(indent + node.label + " > " + str(node.threshold) + " : ")
 					self.printNode(rightChild , indent + "	")
 
-
-
 	def generateTree(self):
-		self.tree = self.recursiveGenerateTree(self.data, self.attributes)
+		self.tree = self.recursiveGenerateTree(self.data, self.attributes, depth=0)
 
-	def recursiveGenerateTree(self, curData, curAttributes):
+	def recursiveGenerateTree(self, curData, curAttributes, depth=0):
 		allSame = self.allSameClass(curData)
+		
+		if self.maxDepth is not None and depth >= self.maxDepth:
+			# Reached max depth, return a leaf with majority class
+			return Node(True, self.getMajClass(curData), None)
 
 		if len(curData) == 0:
 			#Fail
@@ -87,7 +122,10 @@ class C45:
 			remainingAttributes = curAttributes[:]
 			remainingAttributes.remove(best)
 			node = Node(False, best, best_threshold)
-			node.children = [self.recursiveGenerateTree(subset, remainingAttributes) for subset in splitted]
+			node.children = [self.recursiveGenerateTree(subset, remainingAttributes, depth + 1)
+                    if subset else Node(True, self.getMajClass(curData), None)
+    				for subset in splitted
+                    ]
 			return node
 
 	def getMajClass(self, curData):
@@ -97,7 +135,6 @@ class C45:
 			freq[index] += 1
 		maxInd = freq.index(max(freq))
 		return self.classes[maxInd]
-
 
 	def allSameClass(self, data):
 		for row in data:
@@ -129,10 +166,10 @@ class C45:
 				subsets = [[] for a in valuesForAttribute]
 				for row in curData:
 					for index in range(len(valuesForAttribute)):
-						if row[i] == valuesForAttribute[index]:
+						if row[indexOfAttribute] == valuesForAttribute[index]:
 							subsets[index].append(row)
 							break
-				e = gain(curData, subsets)
+				e = self.gain(curData, subsets)
 				if e > maxEnt:
 					maxEnt = e
 					splitted = subsets
@@ -190,7 +227,6 @@ class C45:
 			ent += num*self.log(num)
 		return ent*-1
 
-
 	def log(self, x):
 		if x == 0:
 			return 0
@@ -203,5 +239,3 @@ class Node:
 		self.threshold = threshold
 		self.isLeaf = isLeaf
 		self.children = []
-
-

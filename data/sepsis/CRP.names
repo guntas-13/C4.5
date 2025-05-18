@@ -1,0 +1,24 @@
+Release A,Release B,Release C,Release D,Release E
+CRP: continuous
+DiagnosticArtAstrup: False,True
+DiagnosticBlood: False,True
+DiagnosticECG: False,True
+DiagnosticIC: False,True
+DiagnosticLacticAcid: False,True
+DiagnosticLiquor: False,True
+DiagnosticOther: False,True
+DiagnosticSputum: False,True
+DiagnosticUrinaryCulture: False,True
+DiagnosticUrinarySediment: False,True
+DiagnosticXthorax: False,True
+DisfuncOrg: False,True
+Hypotensie: False,True
+Hypoxie: False,True
+InfectionSuspected: False,True
+Infusion: False,True
+Oligurie: False,True
+SIRSCritHeartRate: False,True
+SIRSCritLeucos: False,True
+SIRSCritTachypnea: False,True
+SIRSCritTemperature: False,True
+SIRSCriteria2OrMore: False,True
