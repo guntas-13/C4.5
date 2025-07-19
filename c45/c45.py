@@ -45,14 +45,33 @@ class C45:
 		
 		if node.isLeaf:
 			label = f"Class = {node.label}"
+			# Leaf nodes with rounded rectangle shape
+			dot.node(node_id, label, 
+					shape='box', 
+					style='filled', 
+					fillcolor='#E8F5E8', 
+					# fontcolor='#2E7D2E',
+					color='#4CAF50')
 		else:
 			if node.threshold is None:
-				label = f"{node.label} (discrete)"
+				label = f"{node.label}\n(discrete)"
 			else:
-				label = f"{node.label} (<= {node.threshold:.2f}?)"
-		dot.node(node_id, label)
+				label = f"{node.label}\n<= {node.threshold:.2f}?"
+			# Decision nodes with diamond shape and better spacing
+			dot.node(node_id, label, 
+					shape='diamond', 
+					style='filled', 
+					fillcolor='#E3F2FD', 
+					# fontcolor='#1565C0',
+					color='#2196F3',
+					width='2.0',
+					height='0.8')
+		
 		if parent_id:
-			dot.edge(parent_id, node_id, label=edge_label or "")
+			# Edges with softer colors and better spacing
+			dot.edge(parent_id, node_id, 
+					label=edge_label or "")
+		
 		# Recurse to children
 		if not node.isLeaf:
 			if node.threshold is not None:
@@ -68,8 +87,13 @@ class C45:
      
 	def visualize(self, fileName, directory):
 		dot = Digraph()
+		dot.attr(rankdir='TB')
+		dot.attr('graph', bgcolor='white', fontsize='15', nodesep='0.85')
+		dot.attr('node', fontsize='15')
+		dot.attr('edge', fontsize='15')
+		
 		self.add_nodes(dot, self.tree)
-		dot.render(fileName, directory, format="pdf", cleanup=True)
+		dot.render(fileName, directory, format="svg", cleanup=True)
 
 	def printNode(self, node, indent=""):
 		if not node.isLeaf:
