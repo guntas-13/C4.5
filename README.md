@@ -12,7 +12,7 @@ leaves represent decisions. C4.5 makes use of information theoretic concepts suc
 
 ### Visualization generated from implementation in the repo
 
-![](./trees/golf.png)
+![](./trees/golfTree.png)
 
 ## Data Format
 
